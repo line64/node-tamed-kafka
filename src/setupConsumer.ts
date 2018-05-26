@@ -5,6 +5,8 @@ import createLogger from './createLogger'
 
 export type Handler = (message: Message) => Promise<void>
 
+export type Message = Message
+
 export interface Options {
   zkHost: string
   groupId: string
