@@ -1,24 +1,28 @@
-import * as bunyan from 'bunyan'
+import * as Logger from 'bunyan'
 import { ConsumerGroup, Message } from 'kafka-node'
 import { queue, retry, ErrorCallback } from 'async'
+import createLogger from './createLogger'
+
+export type Handler = (message: Message) => Promise<void>
 
 export interface Options {
   zkHost: string
   groupId: string
   topic: string
   concurrency?: number
+  processor: Handler
+  recyler?: Handler
   handlerRetry?: {
     times: number
     interval: number
   }
+  logger?: Logger
 }
-
-export type Handler = (message: Message) => Promise<void>
 
 const DEFAULT_RETRY_OPTIONS = { times: 3, interval: 500 }
 
 async function tryRecycle(
-  logger: bunyan,
+  logger: Logger,
   msg: Message,
   recyclebin: Handler
 ): Promise<void> {
@@ -33,7 +37,7 @@ async function tryRecycle(
 }
 
 async function tryProcess(
-  logger: bunyan,
+  logger: Logger,
   msg: Message,
   worker: Handler,
   recyle: Handler,
@@ -53,19 +57,27 @@ async function tryProcess(
   }
 }
 
-export function setupConsumer(
-  logger: bunyan,
-  options: Options,
-  process: Handler,
-  recycle: Handler
-) {
+async function defaultRecycle(logger: Logger, msg: Message): Promise<void> {
+  logger.warn('message failed to process and no recyler available', msg)
+}
+
+export function setupConsumer(options: Options) {
+  const logger = options.logger || createLogger()
+  const concurrency = options.concurrency || 1
+  const defaultRecycler = (msg: Message) => defaultRecycle(logger, msg)
+  const recycler = options.recyler || defaultRecycler
+
   logger.info('setting up kafka consumer', options)
 
   logger.debug('setting up async queue')
-  const concurrency = options.concurrency || 1
   const pending = queue<Message, void>((msg, callback) => {
-    logger = logger.child({ messageOffset: msg.offset, messageKey: msg.key })
-    setImmediate(() => tryProcess(logger, msg, process, recycle, callback))
+    const childLogger = logger.child({
+      messageOffset: msg.offset,
+      messageKey: msg.key
+    })
+    setImmediate(() =>
+      tryProcess(childLogger, msg, options.processor, recycler, callback)
+    )
   }, concurrency)
 
   logger.debug('creating kafka-node consumer group', options)
