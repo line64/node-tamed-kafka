@@ -7,6 +7,8 @@ export type Handler = (message: Message) => Promise<void>
 
 export type Message = Message
 
+export type Logger = Logger
+
 export interface Options {
   zkHost: string
   groupId: string

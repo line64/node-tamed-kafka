@@ -1,5 +1,7 @@
 # Tamed Kafka
 
+[![Build Status](https://travis-ci.org/line64/node-tamed-kafka.svg?branch=master)](https://travis-ci.org/line64/node-tamed-kafka)
+
 A node kafka client tamed for everyday use
 
 ## Features
