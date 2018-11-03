@@ -13,6 +13,7 @@ export interface Options {
   zkHost: string
   groupId: string
   topic: string
+  fromOffset?: 'earliest' | 'latest' | 'none' | null
   concurrency?: number
   processor: Handler
   recyler?: Handler
@@ -89,7 +90,7 @@ export function setupConsumer(options: Options) {
     {
       host: options.zkHost,
       groupId: options.groupId,
-      fromOffset: 'earliest'
+      fromOffset: options.fromOffset || 'latest'
     },
     options.topic
   )
