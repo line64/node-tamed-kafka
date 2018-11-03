@@ -1,6 +1,6 @@
 {
   "name": "tamed-kafka",
-  "version": "0.0.2-development",
+  "version": "0.1.0",
   "description": "",
   "keywords": [],
   "main": "dist/tamed-kafka.umd.js",
